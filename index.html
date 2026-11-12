@@ -43,7 +43,7 @@
             font-weight: bold;
         }
         button:hover { background: #45a049; }
-        #my-id { color: #4caf50; font-family: monospace; font-size: 18px; }
+        #my-id { color: #4caf50; font-family: monospace; font-size: 24px; letter-spacing: 2px;}
         #status { font-style: italic; color: #aaa; margin-top: 15px;}
     </style>
 </head>
@@ -51,42 +51,38 @@
     <h2>WebRTC Real-Time Multiplayer</h2>
     
     <div class="controls">
-        <p>Your ID: <strong id="my-id">Connecting to signaling server...</strong></p>
-        <input type="text" id="join-id" placeholder="Enter Friend's ID">
+        <p>Your ID: <strong id="my-id">Connecting...</strong></p>
+        <input type="text" id="join-id" placeholder="Enter 4-Digit ID" maxlength="4">
         <button id="connect-btn">Connect & Play</button>
         <p id="status">Status: Waiting for connection...</p>
     </div>
 
     <canvas id="gameCanvas" width="500" height="400"></canvas>
 
-    <!-- Import PeerJS for serverless WebRTC -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script>
-        // --- FULL FILE IMPLEMENTATION ---
-        
-        // 1. Initialize PeerJS
-        const peer = new Peer();
+        // --- CHANGED START: Generate a short 4-digit number for the ID ---
+        const shortPin = Math.floor(1000 + Math.random() * 9000).toString();
+        const peer = new Peer(shortPin);
+        // --- CHANGED END ---
+
         let connection = null;
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Player states
-        let myPos = { x: 50, y: 50, color: '#4caf50' }; // Green
-        let peerPos = { x: 430, y: 330, color: '#f44336' }; // Red
+        let myPos = { x: 50, y: 50, color: '#4caf50' }; 
+        let peerPos = { x: 430, y: 330, color: '#f44336' }; 
 
-        // Setup local peer and get ID
         peer.on('open', (id) => {
             document.getElementById('my-id').innerText = id;
         });
 
-        // Handle incoming connection (If you are the Host)
         peer.on('connection', (conn) => {
             connection = conn;
             setupConnection();
         });
 
-        // Connect to a friend (If you are the Client joining)
         document.getElementById('connect-btn').addEventListener('click', () => {
             const friendId = document.getElementById('join-id').value;
             if (!friendId) return;
@@ -94,14 +90,12 @@
             setupConnection();
         });
 
-        // Configure the active connection
         function setupConnection() {
             connection.on('open', () => {
-                document.getElementById('status').innerText = 'Status: Connected! Click here and use Arrow Keys to move.';
+                document.getElementById('status').innerText = 'Status: Connected! Use Arrow Keys to move.';
                 document.getElementById('status').style.color = '#4caf50';
             });
 
-            // Receive movement data from the other player
             connection.on('data', (data) => {
                 peerPos.x = data.x;
                 peerPos.y = data.y;
@@ -114,9 +108,7 @@
             });
         }
 
-        // Game Loop & Input handling
         document.addEventListener('keydown', (e) => {
-            // Prevent default scrolling for arrow keys
             if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
                 e.preventDefault();
             }
@@ -129,20 +121,15 @@
             if (e.key === 'ArrowLeft') myPos.x = Math.max(0, myPos.x - speed);
             if (e.key === 'ArrowRight') myPos.x = Math.min(canvas.width - 20, myPos.x + speed);
 
-            // Send my new position to the peer
             connection.send({ x: myPos.x, y: myPos.y });
         });
 
-        // Render everything
         function draw() {
-            // Clear previous frame
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Draw My Player
             ctx.fillStyle = myPos.color;
             ctx.fillRect(myPos.x, myPos.y, 20, 20);
 
-            // Draw Peer Player (only if connected)
             if (connection && connection.open) {
                 ctx.fillStyle = peerPos.color;
                 ctx.fillRect(peerPos.x, peerPos.y, 20, 20);
@@ -151,7 +138,6 @@
             requestAnimationFrame(draw);
         }
         
-        // Start the render loop
         draw();
     </script>
 </body>
